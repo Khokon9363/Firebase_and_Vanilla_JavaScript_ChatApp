@@ -1,204 +1,189 @@
-var $messages = $('.messages-content');
+var messagesBox = document.getElementById("messages");
+var messagesContent = document.getElementById("messagesContent");
+var messageInput = document.getElementById("message");
+var sendButton = document.getElementById("sendButton");
 
 var myName = "";
 var lastMinute = null;
 
 var ALLOWED_NAMES = ["Tushi", "Edward"];
 
-$(window).on("load", function () {
+function login() {
 
     while (true) {
 
-        var enteredName = prompt("Enter your name:");
+        var name = prompt("Enter your name:");
 
-        if (enteredName === null) {
+        if (name === null) {
             document.body.innerHTML = "";
-            return;
+            return false;
         }
 
-        enteredName = enteredName.trim();
+        name = name.trim();
 
-        if (enteredName === "Tushi" || enteredName === "Edward") {
-            myName = enteredName;
-            break;
+        if (name === "Tushi" || name === "Edward") {
+            myName = name;
+            return true;
         }
 
         alert("Access denied.");
     }
-
-    $messages.mCustomScrollbar({
-        theme: "dark",
-        scrollInertia: 150,
-        autoHideScrollbar: false,
-        mouseWheel: {
-            enable: true
-        },
-        keyboard: {
-            enable: true
-        }
-    });
-
-    firebase.database().ref("messages").on("child_added", function (snapshot) {
-
-        var data = snapshot.val();
-
-        if (!data || !data.message || !data.sender) {
-            return;
-        }
-
-        var message = $('<div class="message"></div>');
-        var avatar = $('<figure class="avatar"></figure>');
-        var image = $('<img>').attr(
-            "src",
-            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQpdX6tPX96Zk00S47LcCYAdoFK8INeCElPeJrVDrh8phAGqUZP_g"
-        );
-
-        avatar.append(image);
-
-        var content = $('<div></div>')
-            .attr("id", "message-" + snapshot.key)
-            .text(data.message);
-
-        if (data.sender === myName) {
-
-            message.addClass("message-personal");
-
-            message.append(avatar);
-            message.append(content);
-
-            var deleteButton = $('<button type="button">Delete</button>');
-
-            deleteButton
-                .addClass("btn-delete")
-                .attr("data-id", snapshot.key);
-
-            deleteButton.on("click", function () {
-                deleteMessage(this);
-            });
-
-            content.append(deleteButton);
-
-        } else {
-
-            message.append(avatar);
-
-            var otherContent = $('<div></div>')
-                .attr("id", "message-" + snapshot.key)
-                .text(data.sender + ": " + data.message);
-
-            message.append(otherContent);
-        }
-
-        $('.mCSB_container').append(message);
-
-        setDate(message);
-
-        updateScrollbar();
-
-        message.addClass("new");
-
-        setTimeout(function () {
-            message.removeClass("new");
-        }, 500);
-    });
-
-    firebase.database().ref("messages").on("child_removed", function (snapshot) {
-
-        var messageElement = document.getElementById(
-            "message-" + snapshot.key
-        );
-
-        if (messageElement) {
-
-            var parentMessage = messageElement.closest(".message");
-
-            if (parentMessage) {
-                parentMessage.remove();
-            }
-
-            updateScrollbar();
-        }
-    });
-});
-
-
-function updateScrollbar() {
-
-    $messages.mCustomScrollbar("update");
-
-    setTimeout(function () {
-
-        $messages.mCustomScrollbar("scrollTo", "bottom", {
-            scrollInertia: 150,
-            timeout: 0
-        });
-
-    }, 50);
 }
 
 
-function setDate(messageElement) {
+function scrollBottom() {
+
+    if (!messagesBox) {
+        return;
+    }
+
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+
+    setTimeout(function () {
+        messagesBox.scrollTop = messagesBox.scrollHeight;
+    }, 10);
+
+    setTimeout(function () {
+        messagesBox.scrollTop = messagesBox.scrollHeight;
+    }, 50);
+
+    setTimeout(function () {
+        messagesBox.scrollTop = messagesBox.scrollHeight;
+    }, 150);
+
+    setTimeout(function () {
+        messagesBox.scrollTop = messagesBox.scrollHeight;
+    }, 300);
+}
+
+
+function createMessage(snapshot) {
+
+    var data = snapshot.val();
+
+    if (!data || !data.message || !data.sender) {
+        return;
+    }
+
+    var message = document.createElement("div");
+
+    message.className = "message";
+
+    if (data.sender === myName) {
+        message.classList.add("message-personal");
+    }
+
+    var avatar = document.createElement("figure");
+    avatar.className = "avatar";
+
+    var avatarImage = document.createElement("img");
+
+    avatarImage.src =
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQpdX6tPX96Zk00S47LcCYAdoFK8INeCElPeJrVDrh8phAGqUZP_g";
+
+    avatar.appendChild(avatarImage);
+
+    var content = document.createElement("div");
+
+    content.id = "message-" + snapshot.key;
+
+    if (data.sender === myName) {
+
+        content.textContent = data.message;
+
+        var deleteButton = document.createElement("button");
+
+        deleteButton.type = "button";
+        deleteButton.className = "btn-delete";
+        deleteButton.textContent = "Delete";
+        deleteButton.setAttribute("data-id", snapshot.key);
+
+        deleteButton.addEventListener("click", function () {
+            deleteMessage(this);
+        });
+
+        content.appendChild(deleteButton);
+
+    } else {
+
+        content.textContent =
+            data.sender + ": " + data.message;
+    }
+
+    message.appendChild(avatar);
+    message.appendChild(content);
+
+    messagesContent.appendChild(message);
+
+    setDate(message);
+
+    message.classList.add("new");
+
+    setTimeout(function () {
+        message.classList.remove("new");
+    }, 400);
+
+    scrollBottom();
+}
+
+
+function setDate(message) {
 
     var now = new Date();
 
-    var currentMinute = now.getMinutes();
+    var minute = now.getMinutes();
 
-    if (lastMinute !== currentMinute) {
+    if (lastMinute !== minute) {
 
-        lastMinute = currentMinute;
+        lastMinute = minute;
 
         var hours = String(now.getHours()).padStart(2, "0");
         var minutes = String(now.getMinutes()).padStart(2, "0");
 
-        $('<div></div>')
-            .addClass("timestamp")
-            .text(hours + ":" + minutes)
-            .appendTo(messageElement);
+        var timestamp = document.createElement("div");
+
+        timestamp.className = "timestamp";
+        timestamp.textContent = hours + ":" + minutes;
+
+        message.appendChild(timestamp);
     }
 }
 
 
-function insertMessage() {
+function sendMessage() {
 
-    var message = $('.message-input').val().trim();
+    var message = messageInput.value.trim();
 
     if (message === "") {
-        return false;
+        return;
     }
 
     if (
         myName !== "Tushi" &&
         myName !== "Edward"
     ) {
-        return false;
+        return;
     }
-
-    sendMessage(message);
-
-    return true;
-}
-
-
-function sendMessage(message) {
 
     firebase.database()
         .ref("messages")
-        .push()
-        .set({
+        .push({
             message: message,
             sender: myName,
             timestamp: firebase.database.ServerValue.TIMESTAMP
         })
         .then(function () {
 
-            $('.message-input').val("");
+            messageInput.value = "";
+
+            scrollBottom();
 
         })
         .catch(function (error) {
 
+            console.error(error);
             alert("Message could not be sent.");
 
-            console.error(error);
         });
 }
 
@@ -221,24 +206,57 @@ function deleteMessage(button) {
         .remove()
         .catch(function (error) {
 
-            alert("Message could not be deleted.");
-
             console.error(error);
+            alert("Message could not be deleted.");
         });
 }
 
 
-$('.message-submit').on("click", function () {
-    insertMessage();
+sendButton.addEventListener("click", function () {
+    sendMessage();
 });
 
 
-$('.message-input').on("keydown", function (e) {
+messageInput.addEventListener("keydown", function (event) {
 
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (event.key === "Enter" && !event.shiftKey) {
 
-        e.preventDefault();
+        event.preventDefault();
 
-        insertMessage();
+        sendMessage();
     }
 });
+
+
+if (login()) {
+
+    firebase.database()
+        .ref("messages")
+        .orderByChild("timestamp")
+        .on("child_added", function (snapshot) {
+
+            createMessage(snapshot);
+
+        });
+
+
+    firebase.database()
+        .ref("messages")
+        .on("child_removed", function (snapshot) {
+
+            var element = document.getElementById(
+                "message-" + snapshot.key
+            );
+
+            if (element) {
+
+                var message = element.closest(".message");
+
+                if (message) {
+                    message.remove();
+                }
+            }
+
+            scrollBottom();
+        });
+}
